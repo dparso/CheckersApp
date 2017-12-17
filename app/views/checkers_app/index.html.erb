@@ -18,6 +18,9 @@
 	<%= image_tag "king.png", :id=>"king", :style=>"display: none" %>
 	<%= image_tag "snake.png", :id=>"snake", :style=>"display: none" %>
 
+	<%= button_to "New Game", action: "new" %>
+
+	<!-- Invisible form for JS to submit -->
 	<%= form_tag "/", :id=>"makeMove" do %>
 	<p> <%= hidden_field_tag(:fromRow) %> </p>
 	<p> <%= hidden_field_tag(:fromCol) %> </p>

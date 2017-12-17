@@ -1,7 +1,7 @@
 class CheckersAppController < ApplicationController
 	protect_from_forgery with: :null_session
 
-	# marked true if all of one player's pieces are captured
+	# marked true if no valid moves or all of one player's pieces are captured
 	@@gameOver = false
 	# delete tells move if a capture has been made, in which case we need to update an extra square
 	@@delete = []
@@ -26,6 +26,15 @@ class CheckersAppController < ApplicationController
   			@board = Board.last
   		else
   			@board = Board.last
+  		end
+  	end
+
+  	def new
+  		puts "-----------In New-----------"
+  		respond_to do |format|
+  			# create new board
+  			setBoard
+  			format.html{redirect_to "/"}
   		end
   	end
 
@@ -71,12 +80,8 @@ class CheckersAppController < ApplicationController
 	  			end
 	  		end
 	
-	  		# if newRow.save # update instead?
 	  		format.html{redirect_to "/"}
- 	 		# else
- 	 		# 	format.html{redirect_to "/"}
- 	 		# end
-	  	end
+		end
 	end
 
 	def setBoard
@@ -226,7 +231,7 @@ class CheckersAppController < ApplicationController
 						to = [index[0] + xSign * dist, index[1] + ySign * dist]
 
 						puts "Trying #{to[0]}, #{to[1]}"
-						if moveValid?(index, to, player, true, false)
+						if moveValid?(index, to, player, false, false)
 							validMoves.push(to)
 						end
 
@@ -312,23 +317,40 @@ class CheckersAppController < ApplicationController
 	end
 
 	def playerWon?
-		if @@board.size > 0
+		# game over if no valid moves or all of one player's pieces are gone
+		board = boardFromString		
+
+		if board.size > 0
 			firstPlayerAlive = false
 			secondPlayerAlive = false
+			# while this will never be set again, if it were to be set true, would have returned already
+			existMoves = false
 			for i in 0..7
 				for j in 0..7
-					puts "Found #{@@board[i][j]}"
-					if @@board[i][j] == "1" or @@board[i][j] == "3"
+					puts "Found #{@@board[i][j]}, #{@board.turn.to_i}"
+					if (board[i][j].to_i % 2) == (@board.turn.to_i % 2) && board[i][j].to_i != 0
+						puts "Checking for moves"
+						validMoves = getValidSquares([i, j])
+						if validMoves.size > 0
+							puts "Valid moves!"
+							return false
+						end
+					end
+						
+					if board[i][j] == "1" or board[i][j] == "3"
 						firstPlayerAlive = true
-					elsif @@board[i][j] == "2" or @@board[i][j] == "4"
+					elsif board[i][j] == "2" or board[i][j] == "4"
 						secondPlayerAlive = true
 					end
 				end
 			end
-			if firstPlayerAlive or secondPlayerAlive
-				return false
-			else
+
+			if not (firstPlayerAlive and secondPlayerAlive) or not existMoves
+				puts "\n\n\n\nGAME OVER!!!!\n\n\n\n"
 				return true
+			else
+				puts "not over!"
+				return false
 			end
 		end
 	end
