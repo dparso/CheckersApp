@@ -1,0 +1,23 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  turn: 1
+  row1: MyText
+  row2: MyText
+  row3: MyText
+  row4: MyText
+  row5: MyText
+  row6: MyText
+  row7: MyText
+  row8: MyText
+
+two:
+  turn: 1
+  row1: MyText
+  row2: MyText
+  row3: MyText
+  row4: MyText
+  row5: MyText
+  row6: MyText
+  row7: MyText
+  row8: MyText

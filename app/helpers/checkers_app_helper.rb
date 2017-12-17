@@ -1,0 +1,2 @@
+module CheckersAppHelper
+end

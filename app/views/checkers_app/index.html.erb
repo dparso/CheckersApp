@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<style>
+		canvas {
+			padding: 0;
+			margin: auto;
+			display: block;
+			width: 500px;
+		}
+	</style>
+</head>
+<body>
+	<h1>Ruby vs. Python!</h1>
+	<%= form_tag "/", :id=>"makeMove" do %>
+	<p> <%= hidden_field_tag(:fromRow) %> </p>
+	<p> <%= hidden_field_tag(:fromCol) %> </p>
+	<p> <%= hidden_field_tag(:toRow) %> </p>
+	<p> <%= hidden_field_tag(:toCol) %> </p>
+	<% end %>
+
+	<p>Current turn: <%= Board.all[0].turn %></p>
+	<canvas id="board"></canvas>
+
+	<p><%= image_tag "ruby.png", :id=>"ruby" %></p>
+	<p><%= image_tag "python.png", :id=>"python" %></p>
+
+
+	<script type="text/javascript">
+		function getCanvasMousePosition (event) {
+			var rect = canvas.getBoundingClientRect();
+
+			return {
+				x: event.clientX - rect.left,
+				y: event.clientY - rect.top
+			}
+		}
+		function drawCanvas() {
+			var canvas = document.getElementById('board');
+			canvas.width = canvas.height = 240;
+			var context = canvas.getContext('2d');
+			for (var x = 0; x < 8; x++) for (var y = 0; y < 8; y++) {
+				context.fillStyle = (x + y) % 2 ? 'black' : 'red';
+				context.fillRect(30 * x, 30 * y, 30, 30)
+			}
+
+			context.strokeStyle="#ffcc00"
+      		// draw vertical lines
+      		for (var x = 0; x < 9; x++) for (var y = 0; y < 9; y++) {
+      			context.beginPath()
+      			context.moveTo(30 * x, 0);
+      			context.lineTo(30 * x, canvas.height);
+      			context.stroke();
+      		}
+      		// draw horizontal lines
+      		for (var x = 0; x < 9; x++) for (var y = 0; y < 9; y++) {
+      			context.beginPath()
+      			context.moveTo(0, 30 * y);
+      			context.lineTo(canvas.height, 30 * y);
+      			context.stroke();
+      		}
+
+	      	// no, it's not pretty -- yes, it works
+	      	// creates an array from the rows in the database
+	      	// split makes arrays from the string
+	      	// splice removes the leading 1 placed to prevent weird interpretation of numbers with trailing 0's
+	      	var board = [(""+(<%= @board[0].row1 %>)).split("").splice(1, 8), (""+(<%= @board[0].row2 %>)).split("").splice(1, 8), (""+(<%= @board[0].row3 %>)).split("").splice(1, 8), (""+(<%= @board[0].row4 %>)).split("").splice(1, 8), (""+(<%= @board[0].row5 %>)).split("").splice(1, 8), (""+(<%= @board[0].row6 %>)).split("").splice(1, 8), (""+(<%= @board[0].row7 %>)).split("").splice(1, 8), (""+(<%= @board[0].row8 %>)).split("").splice(1, 8)];
+
+      		// alert(board.length);
+      		// alert(typeof board);
+      		// alert(board);
+      		// var board =
+      		// var a = board.toString();
+      		// alert(a);
+      		for (var x = 0; x < 8; x++) for (var y = 0; y < 8; y++) {
+      			var num = board[y][x];
+      			if (num == 1) {
+					var img = document.getElementById("ruby");
+					context.drawImage(img, x * 30 - 2, y * 30);
+
+      			} else if (num == 2) {
+      				var img = document.getElementById("python");
+      				context.drawImage(img, x * 30, y * 30, 30, 30);
+
+      			}
+     		}
+  		}
+
+  		// keeps track of the first click, so we only reload on second click
+  		var lastClicked = [-1, -1];
+
+    	var canvas = document.getElementById('board');
+
+		canvas.addEventListener('click', function (event) {
+    		//document.getElementById("thisform").submit();
+    		var mousePos = getCanvasMousePosition(event);
+    		var xPos = mousePos.x;
+    		var yPos = mousePos.y;
+
+    		// 0 - 500 in both directions
+    		rowClicked = parseInt(yPos / 62.5)
+    		colClicked = parseInt(xPos / 62.5)
+
+    		//if(lastClicked[0] > -1) {
+    			// then this is their second click
+    			if(!(lastClicked[0] == rowClicked && lastClicked[1] == colClicked)) {
+    				// only try a move if they chose a different spot
+    				// document.getElementById("fromRow").value = lastClicked[0];
+    				// document.getElementById("fromCol").value = lastClicked[1];
+    				document.getElementById("toRow").value = rowClicked;
+    				document.getElementById("toCol").value = colClicked;
+    				document.getElementById("makeMove").submit();
+    				// note: don't need to reset lastClicked -- reset on page reload
+    			} else {
+    				// reset, as no page reload
+    				lastClicked[0] = -1;
+    				lastClicked[1] = -1;
+    			}
+    		// } else {
+    		// 	// this is their first click -- get valid moves
+    		// 	document.getElementById("fromRow").value = rowClicked;
+    		// 	document.getElementById("fromCol").value = colClicked;
+    		// 	document.getElementById("toRow").value = -1;
+    		// 	document.getElementById("toCol").value = -1;
+    		// 	document.getElementById("makeMove").submit();
+    		// }
+
+    		var c = document.getElementById("board");
+    		var ct = c.getContext("2d");
+
+    		// alert(rowClicked);
+    		// alert(colClicked);
+ 
+
+    		//ct.clearRect(0, 0, 500, 500);
+		});
+  		drawCanvas();
+	</script>
+</body>
+</html>
