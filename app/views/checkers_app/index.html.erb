@@ -13,6 +13,11 @@
 </head>
 <body>
 	<h1>Ruby vs. Python!</h1>
+	<p><%= image_tag "ruby.png", :id=>"ruby" %> vs. <%= image_tag "python.png", :id=>"python" %></p>
+
+	<%= image_tag "king.png", :id=>"king", :style=>"display: none" %>
+	<%= image_tag "snake.png", :id=>"snake", :style=>"display: none" %>
+
 	<%= form_tag "/", :id=>"makeMove" do %>
 	<p> <%= hidden_field_tag(:fromRow) %> </p>
 	<p> <%= hidden_field_tag(:fromCol) %> </p>
@@ -20,12 +25,13 @@
 	<p> <%= hidden_field_tag(:toCol) %> </p>
 	<% end %>
 
-	<p>Current turn: <%= Board.all[0].turn %></p>
+	<p>Current turn: <%= @board.turn %></p>
+
+	<% if @board.gameOn == "false" %>
+		<p> GAME OVER! </p>
+	<% end %>
+
 	<canvas id="board"></canvas>
-
-	<p><%= image_tag "ruby.png", :id=>"ruby" %></p>
-	<p><%= image_tag "python.png", :id=>"python" %></p>
-
 
 	<script type="text/javascript">
 		function getCanvasMousePosition (event) {
@@ -36,12 +42,45 @@
 				y: event.clientY - rect.top
 			}
 		}
+		// no, it's not pretty -- yes, it works
+	    // creates an array from the rows in the database
+	    // split makes arrays from the string
+	    // splice removes the leading 1 placed to prevent weird interpretation of numbers with trailing 0's
+	    var board = [(""+(<%= @board.row1 %>)).split("").splice(1, 8), (""+(<%= @board.row2 %>)).split("").splice(1, 8), (""+(<%= @board.row3 %>)).split("").splice(1, 8), (""+(<%= @board.row4 %>)).split("").splice(1, 8), (""+(<%= @board.row5 %>)).split("").splice(1, 8), (""+(<%= @board.row6 %>)).split("").splice(1, 8), (""+(<%= @board.row7 %>)).split("").splice(1, 8), (""+(<%= @board.row8 %>)).split("").splice(1, 8)];
+
 		function drawCanvas() {
 			var canvas = document.getElementById('board');
 			canvas.width = canvas.height = 240;
 			var context = canvas.getContext('2d');
+
+	      	var validSquaresString = '<%= @board.validList %>';
+
+			var validSquaresList = validSquaresString.split("|")
+			var validSquares = [];
+			for (var i = 0; i < validSquaresList.length; i++) {
+				validSquares.push(validSquaresList[i].split(""));
+			}
+
+			var currSquare = validSquares[0];
+			validSquares = validSquares.splice(1, validSquares.length);
+
 			for (var x = 0; x < 8; x++) for (var y = 0; y < 8; y++) {
-				context.fillStyle = (x + y) % 2 ? 'black' : 'red';
+				var type = 0; // 0 for normal, 1 for valid, 2 for current
+				for (var i = 0; i < validSquares.length; i++) {
+					if (validSquares[i][0] == y && validSquares[i][1] == x) {
+						type = 1;
+					}
+				}
+				if (currSquare[0] == y && currSquare[1] == x) {
+					type = 2;
+				}
+				if (type == 0) {
+					context.fillStyle = (x + y) % 2 ? 'black' : 'red';
+				} else if (type == 1) {
+					context.fillStyle = "#8a8c4b";
+				} else if (type == 2) {
+					context.fillStyle = "#303aa3";
+				}
 				context.fillRect(30 * x, 30 * y, 30, 30)
 			}
 
@@ -61,11 +100,6 @@
       			context.stroke();
       		}
 
-	      	// no, it's not pretty -- yes, it works
-	      	// creates an array from the rows in the database
-	      	// split makes arrays from the string
-	      	// splice removes the leading 1 placed to prevent weird interpretation of numbers with trailing 0's
-	      	var board = [(""+(<%= @board[0].row1 %>)).split("").splice(1, 8), (""+(<%= @board[0].row2 %>)).split("").splice(1, 8), (""+(<%= @board[0].row3 %>)).split("").splice(1, 8), (""+(<%= @board[0].row4 %>)).split("").splice(1, 8), (""+(<%= @board[0].row5 %>)).split("").splice(1, 8), (""+(<%= @board[0].row6 %>)).split("").splice(1, 8), (""+(<%= @board[0].row7 %>)).split("").splice(1, 8), (""+(<%= @board[0].row8 %>)).split("").splice(1, 8)];
 
       		// alert(board.length);
       		// alert(typeof board);
@@ -83,12 +117,18 @@
       				var img = document.getElementById("python");
       				context.drawImage(img, x * 30, y * 30, 30, 30);
 
+      			} else if (num == 3) {
+     				var img = document.getElementById("king");
+      				context.drawImage(img, x * 30, y * 30, 30, 30);
+      			} else if (num == 4) {
+      				var img = document.getElementById("snake");
+      				context.drawImage(img, 0, 0, 48, 48, x * 30 - 2, y * 30 - 5, 35, 35);
+
       			}
      		}
   		}
 
   		// keeps track of the first click, so we only reload on second click
-  		var lastClicked = [-1, -1];
 
     	var canvas = document.getElementById('board');
 
@@ -102,32 +142,23 @@
     		rowClicked = parseInt(yPos / 62.5)
     		colClicked = parseInt(xPos / 62.5)
 
-    		//if(lastClicked[0] > -1) {
-    			// then this is their second click
-    			if(!(lastClicked[0] == rowClicked && lastClicked[1] == colClicked)) {
-    				// only try a move if they chose a different spot
-    				// document.getElementById("fromRow").value = lastClicked[0];
-    				// document.getElementById("fromCol").value = lastClicked[1];
-    				document.getElementById("toRow").value = rowClicked;
-    				document.getElementById("toCol").value = colClicked;
-    				document.getElementById("makeMove").submit();
-    				// note: don't need to reset lastClicked -- reset on page reload
-    			} else {
-    				// reset, as no page reload
-    				lastClicked[0] = -1;
-    				lastClicked[1] = -1;
-    			}
-    		// } else {
-    		// 	// this is their first click -- get valid moves
-    		// 	document.getElementById("fromRow").value = rowClicked;
-    		// 	document.getElementById("fromCol").value = colClicked;
-    		// 	document.getElementById("toRow").value = -1;
-    		// 	document.getElementById("toCol").value = -1;
-    		// 	document.getElementById("makeMove").submit();
-    		// }
+    		// only go if they selected one of their pieces
+    		if(board[rowClicked][colClicked] == <%= @board.turn %> || board[rowClicked][colClicked] == <%= @board.turn + 2 %> || (rowClicked + colClicked) % 2 == 1) {
+    			// only try a move if they chose a different spot
+    			// document.getElementById("fromRow").value = lastClicked[0];
+    			// document.getElementById("fromCol").value = lastClicked[1];
+    			document.getElementById("toRow").value = rowClicked;
+    			document.getElementById("toCol").value = colClicked;
+    			document.getElementById("makeMove").submit();
+    			// note: don't need to reset lastClicked -- reset on page reload
+    		} else {
+    			// reset, as no page reload
+    			lastClicked[0] = -1;
+    			lastClicked[1] = -1;
+    		}
 
-    		var c = document.getElementById("board");
-    		var ct = c.getContext("2d");
+    		// var c = document.getElementById("board");
+    		// var ct = c.getContext("2d");
 
     		// alert(rowClicked);
     		// alert(colClicked);
@@ -139,3 +170,5 @@
 	</script>
 </body>
 </html>
+
+<!-- Snake from <a href="https://www.freepik.com/free-vector/hand-painted-snake-design_975544.htm">Designed by Freepik</a> -->

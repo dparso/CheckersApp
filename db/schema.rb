@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20171217002951) do
+ActiveRecord::Schema.define(version: 20171217053433) do
 
   create_table "boards", force: :cascade do |t|
     t.integer "turn"
@@ -25,6 +25,7 @@ ActiveRecord::Schema.define(version: 20171217002951) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "validList"
+    t.text "gameOn"
   end
 
 end
